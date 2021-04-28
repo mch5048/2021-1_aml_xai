@@ -21,6 +21,7 @@ sdist/
 var/
 wheels/
 dat/
+datasets/
 result_data/
 trained_model/
 pip-wheel-metadata/
