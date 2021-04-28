@@ -21,6 +21,8 @@ sdist/
 var/
 wheels/
 dat/
+result_data/
+trained_model/
 pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
