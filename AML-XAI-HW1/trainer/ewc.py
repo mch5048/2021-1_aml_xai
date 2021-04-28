@@ -48,7 +48,8 @@ class Trainer(trainer.GenericTrainer):
                 batch_size = data.shape[0]
 
                 output = self.model(data)[t]
-                loss_CE = self.criterion(output,target)
+                loss_CE = self.criterion(output,
+                target)
 
                 self.optimizer.zero_grad()
                 (loss_CE).backward()

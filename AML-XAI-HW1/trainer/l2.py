@@ -68,5 +68,14 @@ class Trainer(trainer.GenericTrainer):
         
         For the hyperparameter on regularization, please use self.lamb
         """
-        return nn.CrossEntropyLoss(output, targets)
+        loss = nn.CrossEntropyLoss()(output, targets)
         
+        l2_lambda = self.lamb
+        l2_reg = torch.tensor(0.)
+        for param in self.model.parameters():
+            l2_reg += torch.norm(param)
+        loss += l2_lambda * l2_reg
+        return loss
+
+        # TODO (chmin) compute l2 reg here.
+

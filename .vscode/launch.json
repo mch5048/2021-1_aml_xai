@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "args": ["--trainer", "vanilla", "--dataset", "CIFAR100", "--nepochs", "60", "--lr", "0.001", "--lamb", "10"],
+            "args": ["--trainer", "l2", "--dataset", "CIFAR100", "--nepochs", "60", "--lr", "0.001", "--lamb", "10", "--tasknum", "20"],
             "env": {"PYTHONPATH": "${workspaceRoot}"}
         }
     ]
