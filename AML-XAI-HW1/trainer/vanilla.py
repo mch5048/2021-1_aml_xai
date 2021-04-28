@@ -61,13 +61,13 @@ class Trainer(trainer.GenericTrainer):
             print(' Test: loss={:.3f}, acc={:5.1f}% |'.format(test_loss,100*test_acc),end='')
             print()
         
-    def criterion(self,output,targets):
+    def criterion(self, output, targets):
         """
         Arguments: output (The output logit of self.model), targets (Ground truth label)
         Return: loss function for the classification task
         
         """
-        
+        return nn.CrossEntropyLoss(output, targets)
         #######################################################################################
         
         
