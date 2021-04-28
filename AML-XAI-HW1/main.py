@@ -78,7 +78,6 @@ def main():
 
     # Get the required model
     myModel = networks.ModelFactory.get_model(args.dataset, args.trainer, task_info).to(device)
-
     # Define the optimizer used in the experiment
 
     optimizer = torch.optim.Adam(myModel.parameters(), lr=args.lr, weight_decay=args.decay)

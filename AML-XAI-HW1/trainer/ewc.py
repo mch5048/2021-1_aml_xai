@@ -7,10 +7,15 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+from torch.nn.modules.loss import CrossEntropyLoss
 import torch.utils.data as td
 from PIL import Image
 from tqdm import tqdm
 import trainer
+
+from torch import autograd
+from torch.autograd import Variable
+
 
 import networks
 
@@ -32,7 +37,7 @@ class Trainer(trainer.GenericTrainer):
             self.update_fisher()
         
         # Now, you can update self.t
-        self.t = t
+        self.t = t # It denotes current task
         
         self.train_iterator = torch.utils.data.DataLoader(train_loader, batch_size=self.args.batch_size, shuffle=True)
         self.test_iterator = torch.utils.data.DataLoader(test_loader, 100, shuffle=False)
@@ -50,7 +55,6 @@ class Trainer(trainer.GenericTrainer):
                 output = self.model(data)[t]
                 loss_CE = self.criterion(output,
                 target)
-
                 self.optimizer.zero_grad()
                 (loss_CE).backward()
                 self.optimizer.step()
@@ -62,23 +66,33 @@ class Trainer(trainer.GenericTrainer):
             print(' Test: loss={:.3f}, acc={:5.1f}% |'.format(test_loss,100*test_acc),end='')
             print()
         
-    def criterion(self,output,targets):
+    def criterion(self, output, targets):
         """
         Arguments: output (The output logit of self.model), targets (Ground truth label)
         Return: loss function for the regularization-based continual learning
         
         For the hyperparameter on regularization, please use self.lamb
         """
-        
-        #######################################################################################
-        
-        
-        
-        # Write youre code here
-        
-        
-        
-        #######################################################################################
+
+        loss =  nn.CrossEntropyLoss()(output, targets)
+        if self.t >= 1:
+            losses = []
+            try:
+                for n, p in self.model.named_parameters():
+                    if p.grad == None:
+                        continue
+                    # retrieve the consolidated mean and fisher information.
+                    n = n.replace('.', '__')
+                    mean = getattr(self.model, '{}_mean'.format(n))
+                    fisher = getattr(self.model, '{}_fisher'.format(n))
+                    # wrap mean and fisher in variables.
+                    mean = Variable(mean)
+                    fisher = Variable(fisher)
+                    losses.append((fisher * (p - mean)**2).sum())
+                loss += (self.lamb/2)*sum(losses)
+            except AttributeError:
+                loss += Variable(torch.zeros(1).sum())
+        return loss
     
     def compute_diag_fisher(self):
         """
@@ -87,18 +101,27 @@ class Trainer(trainer.GenericTrainer):
         
         This function will be used in the function 'update_fisher'
         """
+
+        self.fisher_iterator
+
+        param_names = []
+        loglikelihood_grads = {}
+        for data, label in self.fisher_iterator:
+            data = Variable(data)
+            label = Variable(label)
+            loglikelihood = CrossEntropyLoss()(self.model(data)[self.t], label)
+            loglikelihood.backward()
+            for n, p in self.model.named_parameters():
+                n = n.replace('.', '__')
+                if p.grad == None:
+                    continue
+                loglikelihood_grads[n] = (loglikelihood_grads.get(n, 0) + (p.grad ** 2)).mean(0)
+                param_names.append(n)
+
+        fisher_diagonals = [g for g in loglikelihood_grads.values()]
+        dict = {n: f.detach() for n, f in zip(param_names, fisher_diagonals)}
+        return dict
         
-        
-        #######################################################################################
-        
-        
-        
-        # Write youre code here
-        
-        
-        
-        #######################################################################################        
-    
     def update_fisher(self):
         
         """
@@ -107,12 +130,13 @@ class Trainer(trainer.GenericTrainer):
         Use 'compute_diag_fisher' to compute the fisher matrix
         """
         
-        #######################################################################################
+        self.fisher = self.compute_diag_fisher()
         
-        
-        
-        # Write youre code here
-        
-        
-        
-        #######################################################################################
+        for n, p in self.model.named_parameters():
+            if p.grad == None:
+                continue
+            n = n.replace('.', '__')
+            self.model.register_buffer('{}_mean'.format(n), p.data.clone())
+            self.model.register_buffer('{}_fisher'
+                                 .format(n), self.fisher[n].data.clone())
+

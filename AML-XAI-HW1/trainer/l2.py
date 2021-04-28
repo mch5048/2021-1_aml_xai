@@ -27,9 +27,10 @@ class Trainer(trainer.GenericTrainer):
         lr = self.args.lr
         self.setup_training(lr)
         # Do not update self.t
-        if t>0: # update fisher before starting training new task
-            self.update_frozen_model()
-            self.update_fisher()
+        if t > 0: # update fisher before starting training new task
+            pass
+            # self.update_frozen_model()
+            # self.update_fisher()
         
         # Now, you can update self.t
         self.t = t
@@ -48,7 +49,7 @@ class Trainer(trainer.GenericTrainer):
                 batch_size = data.shape[0]
 
                 output = self.model(data)[t]
-                loss_CE = self.criterion(output,target)
+                loss_CE = self.criterion(output, target)
 
                 self.optimizer.zero_grad()
                 (loss_CE).backward()
@@ -72,8 +73,8 @@ class Trainer(trainer.GenericTrainer):
         
         l2_lambda = self.lamb
         l2_reg = torch.tensor(0.)
-        for param in self.model.parameters():
-            l2_reg += torch.norm(param)
+        for param, fixed_param in zip (self.model.parameters(), self.model_fixed.parameters()):
+            l2_reg += torch.norm(param - fixed_param)
         loss += l2_lambda * l2_reg
         return loss
 
